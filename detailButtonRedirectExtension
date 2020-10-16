@@ -1,0 +1,51 @@
+public class buttonRedirectExtension {
+    
+    public buttonRedirectExtension(ApexPages.StandardController controller){
+        //just need this to avoid having an error
+    }
+    
+    public static PageReference redirect(){
+        Id caseId = ApexPages.currentPage().getParameters().get('id');
+        
+        Case c = [SELECT Id, AccountId, ContactId FROM Case WHERE Id = :caseId];
+        List<Contact> cons = [SELECT Id, Name, Email, AccountId FROM Contact WHERE AccountId = :c.AccountId];
+        Set<String> distinctEmails = new Set<String>();
+        For(Contact co : cons){
+            distinctEmails.add(co.Email);
+        }
+        List<String> emailAddresses = new List<String>();
+        emailAddresses.addAll(distinctEmails);
+        
+        buttonRedirectExtension.emailtest(caseid, emailAddresses);
+        
+        //redirect so the user can see the pdf
+        PageReference ref = Page.casepdf;
+        ref.getParameters().put('id', caseId);
+        ref.setRedirect(true);
+        return ref;
+        
+       
+    }
+    
+    @future(callout=true)
+    public static void emailtest(Id caseId, List<String> emailAddresses){
+        try{            
+            Messaging.SingleEmailMessage semail = new Messaging.SingleEmailMessage();
+            Messaging.EmailFileAttachment attach = new Messaging.EmailFileAttachment();
+            PageReference pref = page.casepdf;
+            pref.getParameters().put('id',caseId);
+            pref.setRedirect(true);
+            Blob b = pref.getContent();
+            attach.setFileName('Case Details.pdf');
+            attach.setBody(b);
+            semail.setSubject('Case Details');
+            semail.setToAddresses(EmailAddresses);
+            semail.setPlainTextBody('Please find the attached Case details');
+            semail.setFileAttachments(new Messaging.EmailFileAttachment[]{attach});
+            Messaging.sendEmail(new Messaging.SingleEmailMessage[]{semail});
+        }
+        catch(Exception ex){
+            System.debug(ex.getMessage()+'\n'+ex.getLineNumber()+'\n'+ex.getCause());
+        }
+    }
+}
