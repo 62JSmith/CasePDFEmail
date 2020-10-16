@@ -1,0 +1,3 @@
+<apex:page standardController="Case" extensions="buttonRedirectExtension" action="{!redirect}">
+<!-- This page is called by the detail page custom button.  It redirects to the PDF VF Page as well as emails the PDF VF Page -->
+</apex:page>
