@@ -1,0 +1,59 @@
+public class EmailCasePDF {
+    
+    //this method is called by the process builder
+    @InvocableMethod
+    public static void sendMail(List<vars> var){
+        Id caseId = var[0].caseId;
+        Id accountId = var[0].caseAccId;
+        Id contactId = var[0].caseConId;
+        
+        Contact c = [SELECT Id, Name, Email FROM Contact WHERE Id = :contactId];
+        //Account a = [SELECT Id, Name FROM Account WHERE Id = :accountId];
+        List<Contact> accChildren = [SELECT Id, Name, AccountId, Email FROM Contact WHERE AccountId = :accountId];
+        Set<String> distinctEmails = new Set<String>();
+        For(Contact co : accChildren){
+            distinctEmails.add(co.Email);
+        }
+        List<String> emailAddresses = new List<String>();
+        emailAddresses.addAll(distinctEmails);
+        
+        EmailCasePDF.emailtest(caseId, emailAddresses);
+        
+    }
+    
+    //needs to be a future method or else it don't work
+    @future(callout=true)
+    public static void emailtest(Id caseId, List<String> emailAddresses){
+        try{            
+            Messaging.SingleEmailMessage semail = new Messaging.SingleEmailMessage();
+            Messaging.EmailFileAttachment attach = new Messaging.EmailFileAttachment();
+            
+            PageReference pref = page.casepdf;
+            pref.getParameters().put('id',caseId);
+            pref.setRedirect(true);
+            Blob b = pref.getContent();
+            attach.setFileName('Case Details.pdf');
+            attach.setBody(b);
+            semail.setSubject('Case Details');
+            semail.setToAddresses(EmailAddresses);
+            semail.setPlainTextBody('Please find the attached Case details');
+            semail.setFileAttachments(new Messaging.EmailFileAttachment[]{attach});
+            Messaging.sendEmail(new Messaging.SingleEmailMessage[]{semail});
+        }
+        catch(Exception ex){
+            System.debug(ex.getMessage()+'\n'+ex.getLineNumber()+'\n'+ex.getCause());
+        }
+    }
+    
+    //process builder sets these variables
+    public class vars{
+        @InvocableVariable
+        public Id caseId;
+        
+        @InvocableVariable
+        public Id caseAccId;
+        
+        @InvocableVariable
+        public Id caseConId;
+    }
+}
