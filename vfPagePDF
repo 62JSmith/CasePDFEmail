@@ -1,0 +1,5 @@
+<apex:page standardController="Case" renderAs="pdf">
+        <apex:form >  
+        <apex:detail subject="{!Case.Id}" relatedList="false"/>  
+    </apex:form>  
+</apex:page>
